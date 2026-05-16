@@ -36,22 +36,61 @@ function updateDashboard() {
 updateDashboard();
 setInterval(updateDashboard, 1000);
 
-// 2. LocalStorage Logic for Quick Notes
-// Load saved note on page load
+/// New DOM Elements for Task Tracker
+const taskInput = document.getElementById("task-input");
+const addTaskBtn = document.getElementById("add-task-btn");
+const taskList = document.getElementById("task-list");
+
+// 1. Initialize our tasks array
+let tasks = [];
+
+// 2. Load tasks from localStorage on startup
 window.addEventListener("DOMContentLoaded", () => {
-  const savedNote = localStorage.getItem("dashboardNote");
-  if (savedNote) {
-    noteInput.value = savedNote;
+  const savedTasks = localStorage.getItem("dashboardTasks");
+  if (savedTasks) {
+    tasks = JSON.parse(savedTasks); // Convert string back to array
+    renderTasks();
   }
 });
 
-// Save note to localStorage on click
-saveBtn.addEventListener("click", () => {
-  localStorage.setItem("dashboardNote", noteInput.value);
+// 3. Function to draw the tasks on the screen
+function renderTasks() {
+  taskList.innerHTML = ""; // Clear the current list
 
-  // Show a quick success status message
-  saveStatus.textContent = "Note saved locally!";
-  setTimeout(() => {
-    saveStatus.textContent = "";
-  }, 2000);
+  tasks.forEach((task, index) => {
+    const li = document.createElement("li");
+    li.className = "task-item";
+    li.innerHTML = `
+            <span>${task}</span>
+            <button class="delete-btn" onclick="deleteTask(${index})">
+                <span class="material-icons">delete</span>
+            </button>
+        `;
+    taskList.appendChild(li);
+  });
+}
+
+// 4. Function to add a new task
+function addTask() {
+  const taskText = taskInput.value.trim();
+  if (taskText === "") return; // Don't add empty tasks
+
+  tasks.push(taskText); // Add to our array
+  localStorage.setItem("dashboardTasks", JSON.stringify(tasks)); // Save array as string
+
+  taskInput.value = ""; // Clear the input box
+  renderTasks(); // Update the UI
+}
+
+// 5. Function to delete a task
+window.deleteTask = function (index) {
+  tasks.splice(index, 1); // Remove the item from array
+  localStorage.setItem("dashboardTasks", JSON.stringify(tasks)); // Resave the updated array
+  renderTasks(); // Update the UI
+};
+
+// Event Listeners for adding tasks
+addTaskBtn.addEventListener("click", addTask);
+taskInput.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") addTask(); // Add task if user presses Enter key
 });

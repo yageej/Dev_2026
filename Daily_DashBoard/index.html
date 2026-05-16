@@ -23,17 +23,18 @@
 
       <main class="notes-card">
         <div class="card-header">
-          <span class="material-icons">edit</span>
-          <h2>Quick Notes</h2>
+          <span class="material-icons">check_circle</span>
+          <h2>Daily Tasks</h2>
         </div>
-        <textarea
-          id="note-input"
-          placeholder="Type something to remember for later..."
-        ></textarea>
-        <button id="save-btn" class="mui-btn">
-          <span class="material-icons">save</span> Save Note
-        </button>
-        <p id="save-status"></p>
+
+        <div class="task-input-container">
+          <input type="text" id="task-input" placeholder="Add a new task..." />
+          <button id="add-task-btn" class="mui-btn">
+            <span class="material-icons">add</span>
+          </button>
+        </div>
+
+        <ul id="task-list"></ul>
       </main>
     </div>
 
