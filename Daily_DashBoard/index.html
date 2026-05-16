@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Daily Dashboard</title>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="dashboard-container">
+      <header class="greeting-card">
+        <h1 id="greeting">Good Day!</h1>
+        <div id="clock">00:00:00 AM</div>
+      </header>
+
+      <main class="notes-card">
+        <div class="card-header">
+          <span class="material-icons">edit</span>
+          <h2>Quick Notes</h2>
+        </div>
+        <textarea
+          id="note-input"
+          placeholder="Type something to remember for later..."
+        ></textarea>
+        <button id="save-btn" class="mui-btn">
+          <span class="material-icons">save</span> Save Note
+        </button>
+        <p id="save-status"></p>
+      </main>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
