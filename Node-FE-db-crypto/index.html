@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Live Crypto Tracker</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Live Crypto Dashboard</h1>
+      <button id="fetch-btn">Get Live Prices</button>
+
+      <div id="loading" class="hidden">Fetching live market data...</div>
+      <div id="crypto-container"></div>
+    </div>
+
+    <script>
+      const fetchBtn = document.getElementById("fetch-btn");
+      const cryptoContainer = document.getElementById("crypto-container");
+      const loadingDiv = document.getElementById("loading");
+
+      fetchBtn.addEventListener("click", async () => {
+        // Show loading message, clear old data
+        loadingDiv.classList.remove("hidden");
+        cryptoContainer.innerHTML = "";
+
+        try {
+          // 🔥 CALL YOUR LOCAL NODE.JS SERVER!
+          const response = await fetch("http://localhost:3000/api/crypto");
+
+          if (!response.ok) throw new Error("Backend server is down");
+
+          const coins = await response.json();
+
+          // Loop through the 5 coins and build HTML cards
+          coins.forEach((coin) => {
+            const card = document.createElement("div");
+            card.className = "crypto-card";
+            card.innerHTML = `
+                        <div class="coin-info">
+                            <img src="${coin.image}" alt="${coin.name}" width="30">
+                            <h3>${coin.name} <span>(${coin.symbol})</span></h3>
+                        </div>
+                        <div class="coin-prices">
+                            <p class="price">${coin.price}</p>
+                            <p class="market-cap">Cap: ${coin.marketCap}</p>
+                        </div>
+                    `;
+            cryptoContainer.appendChild(card);
+          });
+        } catch (error) {
+          console.error(error);
+          cryptoContainer.innerHTML = `<p class="error">Could not connect to the backend server. Make sure it is running on port 3000!</p>`;
+        } finally {
+          loadingDiv.classList.add("hidden");
+        }
+      });
+    </script>
+  </body>
+</html>

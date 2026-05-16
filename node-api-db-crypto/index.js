@@ -1,7 +1,9 @@
 const express = require("express");
+const cors = require("cors"); // 1. Import CORS
 const app = express();
 const PORT = 3000;
 
+app.use(cors()); // 2. Enable CORS for all incoming requests
 // Middleware to parse JSON data
 app.use(express.json());
 
@@ -37,6 +39,30 @@ app.get("/api/crypto", async (req, res) => {
     res.json(cleanData);
   } catch (error) {
     console.error("Error fetching crypto data:", error);
+    res
+      .status(500)
+      .json({ error: "Something went wrong fetching backend data." });
+  }
+});
+
+// Pokemon api endpoint
+app.get("/api/pokemon", async (req, res) => {
+  try {
+    // Fetching data from the public PokeAPI
+    const response = await fetch("https://pokeapi.co/api/v2/pokemon/ditto");
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch data from PokeAPI");
+    }
+
+    console.log("Successfully fetched Pokemon data from PokeAPI");
+    const data = await response.json();
+
+    res.json(data);
+
+    console.log("Response:", data);
+  } catch (error) {
+    console.error("Error fetching Pokemon data:", error);
     res
       .status(500)
       .json({ error: "Something went wrong fetching backend data." });
