@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pokedex!</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Pokemon Finder</h1>
+    </div>
+
+    <div>
+      <input
+        type="text"
+        id="poke-input"
+        placeholder="Type a pokemon name (e.g. growlithe)..."
+      />
+      <button id="fetch-btn">Get Pokemon Data</button>
+    </div>
+
+    <div id="pokemon-card" class="card-hidden"></div>
+
+    <script>
+      const fetchBtn = document.getElementById("fetch-btn");
+      const pokeInput = document.getElementById("poke-input");
+      const pokemonCard = document.getElementById("pokemon-card");
+
+      async function getPokemon() {
+        const name = pokeInput.value.trim().toLowerCase();
+        if (!name) return alert("Please type a Pokémon name first!");
+
+        pokemonCard.innerHTML = "<p>Searching the backend Pokédex...</p>";
+
+        try {
+          // 🔥 FIX: Changed 'input' to 'name' variable to cleanly pass the dynamic value down the pipe
+          const response = await fetch(
+            `http://localhost:3000/api/pokemon/${name}`,
+          );
+
+          if (!response.ok)
+            throw new Error("Backend server error or Pokémon not found");
+
+          const pokemon = await response.json();
+
+          pokemonCard.innerHTML = `
+        <img src="${pokemon.sprite}" alt="${pokemon.name}" width="120">
+        <h2>${pokemon.name.toUpperCase()} <span>#${pokemon.id}</span></h2>
+        <div class="stats">
+          <p><strong>Type:</strong> ${pokemon.types.join(", ")}</p>
+          <p><strong>Height:</strong> ${pokemon.height / 10} m</p>
+          <p><strong>Weight:</strong> ${pokemon.weight / 10} kg</p>
+        </div>
+      `;
+        } catch (error) {
+          console.error(error);
+          pokemonCard.innerHTML = `<p style="color: red; font-weight: bold;">Could not connect to the backend server. Make sure 'node index.js' is running on port 3000!</p>`;
+        }
+      }
+
+      fetchBtn.addEventListener("click", getPokemon);
+      pokeInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") getPokemon();
+      });
+    </script>
+  </body>
+</html>

@@ -1,28 +1,29 @@
 const express = require("express");
+const cors = require("cors");
 const app = express();
 const PORT = 3000;
 
-// Middleware to parse JSON data
 app.use(express.json());
+app.use(cors());
 
-const pokemonName = "growlithe"; // Example Pokemon name
-// Endpoint 1: A basic health check to see if the server is alive
 app.get("/", (req, res) => {
   res.send("Pokemon API Server is running beautifully!");
 });
 
-app.get("/api/pokemon", async (req, res) => {
+app.get("/api/pokemon/:name", async (req, res) => {
   try {
-    // Fetching data from the public PokeAPI
+    // 🔥 FIX: Added this line to extract the search term directly out of the URL path parameter!
+    const pokemonName = req.params.name.toLowerCase().trim();
+
     const response = await fetch(
       `https://pokeapi.co/api/v2/pokemon/${pokemonName}`,
     );
 
     if (!response.ok) {
-      throw new Error("Failed to fetch data from PokeAPI");
+      return res.status(404).json({ error: "Pokémon not found in PokéAPI" });
     }
 
-    console.log("Successfully fetched Pokemon data from PokeAPI");
+    console.log(`Successfully fetched ${pokemonName} data from PokeAPI`);
     const data = await response.json();
 
     const pokemonData = {
@@ -35,8 +36,6 @@ app.get("/api/pokemon", async (req, res) => {
     };
 
     res.json(pokemonData);
-
-    console.log(pokemonName, "data:", pokemonData);
   } catch (error) {
     console.error("Error fetching Pokemon data:", error);
     res
@@ -45,7 +44,6 @@ app.get("/api/pokemon", async (req, res) => {
   }
 });
 
-// Start the server
 app.listen(PORT, () => {
   console.log(`🚀 Backend server listening live at http://localhost:${PORT}`);
 });
