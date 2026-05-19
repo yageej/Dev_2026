@@ -3,25 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pokedex!</title>
+    <title>Pokedex</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <div class="container">
-      <h1>Pokemon Finder</h1>
+      <h1 class="card-header">Pokedex</h1>
+
+      <div class="card">
+        <input
+          class="card-input"
+          type="text"
+          id="poke-input"
+          placeholder="Type a pokemon name (e.g. growlithe)..."
+        />
+
+        <button class="card-button" id="fetch-btn">Get Pokemon Data</button>
+      </div>
+
+      <div id="pokemon-card" class="card-hidden"></div>
     </div>
-
-    <div>
-      <input
-        type="text"
-        id="poke-input"
-        placeholder="Type a pokemon name (e.g. growlithe)..."
-      />
-      <button id="fetch-btn">Get Pokemon Data</button>
-    </div>
-
-    <div id="pokemon-card" class="card-hidden"></div>
-
     <script>
       const fetchBtn = document.getElementById("fetch-btn");
       const pokeInput = document.getElementById("poke-input");
@@ -43,7 +44,7 @@
             throw new Error("Backend server error or Pokémon not found");
 
           const pokemon = await response.json();
-
+          pokemonCard.className = "pokemon-card-active"; // Show the card with styling
           pokemonCard.innerHTML = `
         <img src="${pokemon.sprite}" alt="${pokemon.name}" width="120">
         <h2>${pokemon.name.toUpperCase()} <span>#${pokemon.id}</span></h2>
