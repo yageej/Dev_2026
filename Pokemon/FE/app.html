@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pokedex</title>
+    <title>My Pokedex</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
@@ -15,7 +15,7 @@
           class="card-input"
           type="text"
           id="poke-input"
-          placeholder="Type a pokemon name (e.g. growlithe)..."
+          placeholder="Type a pokemon name (e.g. Pikachu)..."
         />
 
         <button class="card-button" id="fetch-btn">Search Pokemon</button>
@@ -32,7 +32,7 @@
         const name = pokeInput.value.trim().toLowerCase();
         if (!name) return alert("Please type a Pokémon name first!");
 
-        pokemonCard.innerHTML = "<p> Pokédex Searching.....</p>";
+        pokemonCard.innerHTML = "<p>Pokédex Searching.....</p>";
 
         try {
           // 🔥 FIX: Changed 'input' to 'name' variable to cleanly pass the dynamic value down the pipe
