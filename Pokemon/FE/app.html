@@ -18,7 +18,7 @@
           placeholder="Type a pokemon name (e.g. growlithe)..."
         />
 
-        <button class="card-button" id="fetch-btn">Get Pokemon Data</button>
+        <button class="card-button" id="fetch-btn">Search Pokemon</button>
       </div>
 
       <div id="pokemon-card" class="card-hidden"></div>
@@ -32,7 +32,7 @@
         const name = pokeInput.value.trim().toLowerCase();
         if (!name) return alert("Please type a Pokémon name first!");
 
-        pokemonCard.innerHTML = "<p>Searching the backend Pokédex...</p>";
+        pokemonCard.innerHTML = "<p> Pokédex Searching.....</p>";
 
         try {
           // 🔥 FIX: Changed 'input' to 'name' variable to cleanly pass the dynamic value down the pipe
