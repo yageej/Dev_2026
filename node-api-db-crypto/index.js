@@ -73,3 +73,7 @@ app.get("/api/pokemon", async (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Backend server listening live at http://localhost:${PORT}`);
 });
+
+/*
+? This is a sample comment block to demonstrate how to use different comment styles in JavaScript.
+*/
