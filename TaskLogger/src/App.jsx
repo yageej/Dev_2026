@@ -1,16 +1,120 @@
-import React from "react";
+import React, { useState } from "react";
+import Header from "./components/Header";
+import TaskForm from "./components/TaskForm";
+import TaskList from "./components/TaskList";
+import Metrics from "./components/Metrics";
 
 export default function App() {
+  const [tasks, setTasks] = useState([
+    {
+      id: 1,
+      text: "Initialize Vite React boilerplate setup",
+      completed: true,
+      category: "Engineering",
+      date: "2026-06-25",
+      priority: "High",
+    },
+    {
+      id: 2,
+      text: "Design interactive dashboard user interface",
+      completed: false,
+      category: "Design",
+      date: "2026-06-27",
+      priority: "High",
+    },
+    {
+      id: 3,
+      text: "Conduct security group policy auditing research",
+      completed: false,
+      category: "Research",
+      date: "2026-06-28",
+      priority: "Low",
+    },
+  ]);
+
+  const addTask = (taskText, category, date, priority) => {
+    const newTask = {
+      id: Date.now(),
+      text: taskText,
+      completed: false,
+      category: category || "General",
+      // Fallback to today's date if empty
+      date: date || new Date().toISOString().split("T")[0],
+      priority: priority || "Low",
+    };
+    setTasks([...tasks, newTask]);
+  };
+
+  const toggleTask = (id) => {
+    setTasks(
+      tasks.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)),
+    );
+  };
+
+  const deleteTask = (id) => {
+    setTasks(tasks.filter((t) => t.id !== id));
+  };
+
   return (
     <div
-      style={{ padding: "2rem", textAlign: "center", fontFamily: "sans-serif" }}
+      style={{
+        backgroundColor: "#f3f4f6",
+        minHeight: "100vh",
+        padding: "2rem 1rem",
+        fontFamily:
+          '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      }}
     >
-      <h1>Task Logger Dashboard 🚀</h1>
-      <p>Your clean development canvas is ready.</p>
+      <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
+        <Header />
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "2rem",
+            alignItems: "start",
+          }}
+        >
+          {/* LEFT COLUMN */}
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}
+          >
+            <Metrics tasks={tasks} />
+            <TaskForm onAddTask={addTask} />
+          </div>
+
+          {/* RIGHT COLUMN */}
+          <div
+            style={{
+              backgroundColor: "white",
+              padding: "1.5rem",
+              borderRadius: "12px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+              minHeight: "400px",
+            }}
+          >
+            <h2
+              style={{
+                fontSize: "1.15rem",
+                color: "#1f2937",
+                marginTop: 0,
+                marginBottom: "1rem",
+                fontWeight: "600",
+              }}
+            >
+              Active Log Registry
+            </h2>
+            <TaskList
+              tasks={tasks}
+              onToggleTask={toggleTask}
+              onDeleteTask={deleteTask}
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
-
 // import { useState } from 'react'
 // import reactLogo from './assets/react.svg'
 // import viteLogo from './assets/vite.svg'
