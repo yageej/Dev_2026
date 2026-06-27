@@ -1,55 +1,106 @@
 import React from "react";
-import { CheckCircle, Circle, Trash2, Calendar } from "lucide-react";
+import { CheckCircle2, Circle, Trash2, Calendar } from "lucide-react";
 
-export default function TaskList({ tasks, onToggleTask, onDeleteTask }) {
-  if (!tasks || tasks.length === 0) {
+export default function TaskList({
+  tasks,
+  onToggleTask,
+  onDeleteTask,
+  onSeeMore,
+  onOpenForm,
+}) {
+  if (tasks.length === 0) {
     return (
       <div
         style={{
-          textAlign: "center",
-          color: "#9ca3af",
-          padding: "3rem",
-          backgroundColor: "white",
-          borderRadius: "12px",
-          border: "2px dashed #e5e7eb",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "4rem",
+          backgroundColor: "#121214",
+          borderRadius: "14px",
+          border: "1px dashed #27272a",
         }}
       >
-        No tasks log records found. Enjoy the open canvas! ☕
+        <p style={{ color: "#a1a1aa", margin: "0 0 1rem 0" }}>
+          No matching log configurations found.
+        </p>
+        <button
+          onClick={onOpenForm}
+          style={{
+            backgroundColor: "#27272a",
+            color: "white",
+            border: "none",
+            padding: "0.5rem 1rem",
+            borderRadius: "8px",
+            cursor: "pointer",
+          }}
+        >
+          Create Task
+        </button>
       </div>
     );
   }
 
-  // 1. Get today's local date string formatted as YYYY-MM-DD
-  const todayStr = new Date().toISOString().split("T")[0]; // "2026-06-27"
+  // Time boundaries (Matching your workspace target metrics baseline)
+  // Time boundaries (Matching your workspace target metrics baseline)
+  const todayStr = "2026-06-28";
 
-  // 2. Separate tasks into two distinct arrays based on the date comparison
-  const dueTodayTasks = tasks.filter((task) => task.date === todayStr);
-  const futureTasks = tasks
-    .filter((task) => task.date !== todayStr)
-    .sort((a, b) => new Date(a.date) - new Date(b.date)); // Keep future sorted chronologically
+  // 1. OVERDUE: Sort oldest overdue dates first, then grab the oldest 5
+  const overdue = tasks
+    .filter((t) => !t.completed && t.date < todayStr)
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
 
-  // Helper badge design
-  const getBadgeStyle = (cat) => {
-    const colors = {
-      Engineering: { bg: "#e0e7ff", text: "#4338ca" },
-      Design: { bg: "#fce7f3", text: "#b7056d" },
-      Research: { bg: "#fef3c7", text: "#b45309" },
-      General: { bg: "#e2e8f0", text: "#475569" },
-    };
-    const current = colors[cat] || colors.General;
+  // 2. DUE TODAY: Keep chronological based on their creation sequence ID
+  const dueToday = tasks
+    .filter((t) => t.date === todayStr)
+    .sort((a, b) => a.id - b.id);
+
+  // 3. UPCOMING: Sort chronologically (closest future date to furthest future date)
+  const upcoming = tasks
+    .filter((t) => t.date > todayStr)
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+  // Label pill matching styles
+  const getTagStyle = (item) => {
+    if (item.completed) {
+      return {
+        bg: "rgba(34, 197, 94, 0.1)",
+        text: "#22c55e",
+        label: "Completed",
+      };
+    }
+    if (item.date < todayStr) {
+      return {
+        bg: "rgba(239, 68, 68, 0.15)",
+        text: "#ef4444",
+        label: "Overdue",
+      };
+    }
+    if (item.priority === "High") {
+      return {
+        bg: "rgba(239, 68, 68, 0.15)",
+        text: "#ef4444",
+        label: "High Priority",
+      };
+    }
+    if (item.category === "Engineering") {
+      return {
+        bg: "rgba(129, 140, 248, 0.15)",
+        text: "#818cf8",
+        label: "In Progress",
+      };
+    }
     return {
-      padding: "0.2rem 0.5rem",
-      borderRadius: "6px",
-      fontSize: "0.7rem",
-      fontWeight: "600",
-      backgroundColor: current.bg,
-      color: current.text,
+      bg: "rgba(161, 161, 170, 0.15)",
+      text: "#a1a1aa",
+      label: item.priority || "Low Priority",
     };
   };
 
-  // Reusable card component for rendering individual row items
-  const renderTaskCard = (item) => {
-    const isHigh = item.priority === "High";
+  // Sleek, full-width horizontal row element
+  const renderLinearTaskRow = (item) => {
+    const tag = getTagStyle(item);
+
     return (
       <div
         key={item.id}
@@ -57,147 +108,169 @@ export default function TaskList({ tasks, onToggleTask, onDeleteTask }) {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "1rem",
-          backgroundColor: "white",
-          borderRadius: "12px",
-          borderLeft: item.completed
-            ? "4px solid #d1d5db"
-            : `4px solid ${isHigh ? "#ef4444" : "#10b981"}`,
-          boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
-          opacity: item.completed ? 0.6 : 1,
-          borderTop: "1px solid #f3f4f6",
-          borderRight: "1px solid #f3f4f6",
-          borderBottom: "1px solid #f3f4f6",
-          marginBottom: "0.75rem",
+          padding: "1rem 1.25rem",
+          backgroundColor: "#121214",
+          borderBottom: "1px solid #1f1f23",
+          opacity: item.completed ? 0.5 : 1,
+          gap: "1rem",
         }}
       >
+        {/* Left Side: Checkbox & Text description line */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "0.75rem",
+            gap: "1rem",
             flex: 1,
+            minWidth: 0,
           }}
         >
           <div
             onClick={() => onToggleTask(item.id)}
-            style={{ cursor: "pointer", display: "flex", alignItems: "center" }}
+            style={{
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              color: item.completed ? "#22c55e" : "#52525b",
+            }}
           >
             {item.completed ? (
-              <CheckCircle color="#10b981" fill="#e6f4ea" size={22} />
+              <CheckCircle2 size={20} fill="#14532d" />
             ) : (
-              <Circle color="#d1d5db" size={22} />
+              <Circle size={20} />
             )}
           </div>
-
-          <div
-            style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}
+          <span
+            style={{
+              fontSize: "0.95rem",
+              fontWeight: "500",
+              color: item.completed ? "#71717a" : "#ffffff",
+              textDecoration: item.completed ? "line-through" : "none",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
           >
-            <span
-              style={{
-                textDecoration: item.completed ? "line-through" : "none",
-                color: item.completed ? "#4b5563" : "#1f2937", // Enhanced contrast dark gray for complete
-                fontWeight: "500",
-                fontSize: "0.95rem",
-              }}
-            >
-              {item.text}
-            </span>
-
-            <div
-              style={{
-                display: "flex",
-                gap: "0.5rem",
-                alignItems: "center",
-                flexWrap: "wrap",
-              }}
-            >
-              <span style={getBadgeStyle(item.category)}>{item.category}</span>
-              <span
-                style={{
-                  padding: "0.2rem 0.5rem",
-                  borderRadius: "6px",
-                  fontSize: "0.7rem",
-                  fontWeight: "600",
-                  backgroundColor: isHigh ? "#fee2e2" : "#dcfce7",
-                  color: isHigh ? "#ef4444" : "#15803d",
-                }}
-              >
-                {item.priority || "Low"}
-              </span>
-              <span
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.25rem",
-                  fontSize: "0.75rem",
-                  color: "#6b7280",
-                }}
-              >
-                <Calendar size={12} /> {item.date || "No Date"}
-              </span>
-            </div>
-          </div>
+            {item.text}
+          </span>
         </div>
 
-        <button
-          onClick={() => onDeleteTask(item.id)}
+        {/* Right Side: Inline Deadline Date metadata, Status Pill & Delete trigger actions */}
+        <div
           style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: "0.5rem",
+            display: "flex",
+            alignItems: "center",
+            gap: "1.5rem",
+            flexShrink: 0,
           }}
         >
-          <Trash2 color="#ef4444" size={18} />
-        </button>
+          {item.date && !item.completed && item.date >= todayStr && (
+            <span
+              style={{
+                fontSize: "0.8rem",
+                color: "#52525b",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.25rem",
+              }}
+            >
+              {item.date === todayStr ? "Today" : item.date.slice(5)}
+            </span>
+          )}
+
+          <span
+            style={{
+              fontSize: "0.75rem",
+              fontWeight: "600",
+              padding: "0.25rem 0.65rem",
+              borderRadius: "4px",
+              backgroundColor: tag.bg,
+              color: tag.text,
+              minWidth: "75px",
+              textAlign: "center",
+            }}
+          >
+            {tag.label}
+          </span>
+
+          <Trash2
+            size={16}
+            color="#ef4444"
+            style={{ cursor: "pointer", opacity: 0.6 }}
+            onClick={() => onDeleteTask(item.id)}
+          />
+        </div>
       </div>
     );
   };
 
-  const headerStyle = {
-    fontSize: "0.9rem",
-    textTransform: "uppercase",
-    letterSpacing: "0.05em",
-    color: "#6b7280",
-    margin: "1.5rem 0 0.5rem 0",
-    fontWeight: "700",
+  const renderLinearSection = (title, subset, labelColor) => {
+    if (subset.length === 0) return null;
+    const capped = subset.slice(0, 5);
+    const hasMore = subset.length > 5;
+
+    return (
+      <div style={{ marginBottom: "2rem" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "0.5rem",
+          }}
+        >
+          <h3
+            style={{
+              fontSize: "0.8rem",
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+              color: labelColor,
+              margin: 0,
+              fontWeight: "700",
+            }}
+          >
+            {title}
+          </h3>
+        </div>
+
+        {/* Flat Stack container shell instead of a card grid */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            backgroundColor: "#121214",
+            borderRadius: "8px",
+            overflow: "hidden",
+          }}
+        >
+          {capped.map((item) => renderLinearTaskRow(item))}
+        </div>
+
+        {hasMore && (
+          <div style={{ textAlign: "center", marginTop: "0.5rem" }}>
+            <button
+              onClick={() => onSeeMore(title, subset)}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#3b82f6",
+                fontSize: "0.8rem",
+                fontWeight: "600",
+                cursor: "pointer",
+              }}
+            >
+              See More Tasks...
+            </button>
+          </div>
+        )}
+      </div>
+    );
   };
-
   return (
-    <div>
-      {/* SECTION 1: DUE TODAY */}
-      <h3 style={{ ...headerStyle, marginTop: 0 }}>⚠️ Due Today</h3>
-      {dueTodayTasks.length === 0 ? (
-        <div
-          style={{
-            fontSize: "0.85rem",
-            color: "#9ca3af",
-            italic: "true",
-            padding: "0.5rem 0 1rem 0",
-          }}
-        >
-          Clear schedule for today! ✨
-        </div>
-      ) : (
-        dueTodayTasks.map((item) => renderTaskCard(item))
-      )}
-
-      {/* SECTION 2: LATER / SCHEDULED */}
-      <h3 style={headerStyle}>📅 Upcoming Schedule</h3>
-      {futureTasks.length === 0 ? (
-        <div
-          style={{
-            fontSize: "0.85rem",
-            color: "#9ca3af",
-            padding: "0.5rem 0 1rem 0",
-          }}
-        >
-          No future tasks scheduled.
-        </div>
-      ) : (
-        futureTasks.map((item) => renderTaskCard(item))
-      )}
+    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+      {renderLinearSection("Overdue", overdue, "#ef4444")}
+      {renderLinearSection("Due Today", dueToday, "#3b82f6")}
+      {renderLinearSection("Upcoming", upcoming, "#71717a")}
     </div>
   );
 }

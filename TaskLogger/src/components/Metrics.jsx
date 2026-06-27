@@ -21,15 +21,6 @@ export default function Metrics({ tasks }) {
   return (
     <div style={{ display: "flex", gap: "1rem", marginBottom: "1.5rem" }}>
       <div style={cardStyle}>
-        <Circle color="#6b7280" size={24} />
-        <div>
-          <div style={{ fontSize: "0.85rem", color: "#6b7280" }}>Pending</div>
-          <div style={{ fontSize: "1.25rem", fontWeight: "bold" }}>
-            {pending}
-          </div>
-        </div>
-      </div>
-      <div style={cardStyle}>
         <CheckCircle2 color="#10b981" size={24} />
         <div>
           <div style={{ fontSize: "0.85rem", color: "#6b7280" }}>Completed</div>
@@ -38,6 +29,16 @@ export default function Metrics({ tasks }) {
           </div>
         </div>
       </div>
+      <div style={cardStyle}>
+        <Circle color="#6b7280" size={24} />
+        <div>
+          <div style={{ fontSize: "0.85rem", color: "#6b7280" }}>Pending</div>
+          <div style={{ fontSize: "1.25rem", fontWeight: "bold" }}>
+            {pending}
+          </div>
+        </div>
+      </div>
+
       <div style={cardStyle}>
         <Trophy color="#f59e0b" size={24} />
         <div>
