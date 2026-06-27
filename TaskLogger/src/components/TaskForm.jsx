@@ -88,7 +88,7 @@ export default function TaskForm({ onAddTask }) {
             alignItems: "center",
             justifyContent: "center",
             padding: "0.75rem 1rem",
-            backgroundColor: "#4f46e5",
+            backgroundColor: "#21a4e1",
             color: "#1f2937",
             border: "none",
             borderRadius: "8px",
