@@ -62,7 +62,7 @@ export default function Sidebar({
             letterSpacing: "-0.02em",
           }}
         >
-          Workspace
+          Workspace Dev
         </span>
       </div>
 
