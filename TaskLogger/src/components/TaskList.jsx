@@ -43,7 +43,6 @@ export default function TaskList({
   }
 
   // Time boundaries (Matching your workspace target metrics baseline)
-  // Time boundaries (Matching your workspace target metrics baseline)
   const todayStr = "2026-06-28";
 
   // 1. OVERDUE: Sort oldest overdue dates first, then grab the oldest 5
@@ -60,6 +59,7 @@ export default function TaskList({
   const upcoming = tasks
     .filter((t) => t.date > todayStr)
     .sort((a, b) => new Date(a.date) - new Date(b.date));
+
   // Label pill matching styles
   const getTagStyle = (item) => {
     if (item.completed) {
@@ -233,7 +233,6 @@ export default function TaskList({
           </h3>
         </div>
 
-        {/* Flat Stack container shell instead of a card grid */}
         <div
           style={{
             display: "flex",
@@ -266,6 +265,8 @@ export default function TaskList({
       </div>
     );
   };
+
+  // ⚡ FIXED: Cleaned up the leftover template tracker variables line entirely!
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
       {renderLinearSection("Overdue", overdue, "#ef4444")}

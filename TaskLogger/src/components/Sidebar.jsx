@@ -1,4 +1,5 @@
 import React from "react";
+// ⚡ ADDED 'Calendar' TO THIS IMPORT LINE HERE
 import {
   List,
   AlertCircle,
@@ -6,6 +7,7 @@ import {
   CheckCircle2,
   Archive,
   HelpCircle,
+  Calendar,
 } from "lucide-react";
 
 export default function Sidebar({
@@ -19,6 +21,7 @@ export default function Sidebar({
     { name: "High Priority", icon: <AlertCircle size={18} /> },
     { name: "In Progress", icon: <Clock size={18} /> },
     { name: "Completed", icon: <CheckCircle2 size={18} /> },
+    { name: "Calendar", icon: <Calendar size={18} /> },
   ];
 
   return (

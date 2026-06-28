@@ -3,6 +3,7 @@ import Sidebar from "./components/Sidebar.jsx";
 import TopNav from "./components/TopNav";
 import TaskForm from "./components/TaskForm";
 import TaskList from "./components/TaskList";
+import CalendarView from "./components/CalendarView";
 
 export default function App() {
   const [tasks, setTasks] = useState([
@@ -129,11 +130,13 @@ export default function App() {
         display: "flex",
         backgroundColor: "#0b0b0c",
         minHeight: "100vh",
+        width: "100vw",
         color: "#e2e8f0",
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        overflow: "hidden",
       }}
     >
-      {/* 1. PERSISTENT NAVIGATION SIDEBAR */}
+      {/* Sidebar - Fixed Left Column */}
       <Sidebar
         tasks={tasks}
         activeTab={activeTab}
@@ -141,72 +144,88 @@ export default function App() {
         onNewTaskClick={() => setIsFormOpen(true)}
       />
 
-      {/* MAIN WORKSPACE WRAPPER */}
+      {/* Main Content Area Wrapper - ⚡ FIXED: Using full flex grow with layout boundary isolation */}
       <div
         style={{
           flex: 1,
           display: "flex",
           flexDirection: "column",
           minWidth: 0,
+          height: "100vh",
         }}
       >
-        {/* 2. TOP ACTION NAVIGATION BAR */}
         <TopNav searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
-        {/* 3. DYNAMIC CONTENT INNER LAYER */}
-        <main style={{ flex: 1, padding: "2.5rem", overflowY: "auto" }}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "between",
-              alignItems: "baseline",
-              marginBottom: "2rem",
-            }}
-          >
-            <div>
-              <h1
+        {/* ⚡ FIXED: Added explicit width styles so grid layouts can expand symmetrically */}
+        <main
+          style={{
+            flex: 1,
+            padding: "2.5rem",
+            overflowY: "auto",
+            display: "flex",
+            flexDirection: "column",
+            width: "100%",
+            boxSizing: "border-box",
+          }}
+        >
+          {/* DYNAMIC NAVIGATION SCREEN RENDERING CONTROLLER */}
+          {activeTab === "Calendar" ? (
+            <CalendarView tasks={tasks} onToggleTask={toggleTask} />
+          ) : (
+            <>
+              <div
                 style={{
-                  fontSize: "2rem",
-                  margin: 0,
-                  fontWeight: "700",
-                  color: "#ffffff",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "baseline",
+                  marginBottom: "2rem",
                 }}
               >
-                {activeTab} ({filteredTasks.length})
-              </h1>
-              <p
-                style={{
-                  margin: "0.25rem 0 0 0",
-                  color: "#8a8a93",
-                  fontSize: "0.9rem",
-                }}
-              >
-                You have{" "}
-                {
-                  tasks.filter((t) => !t.completed && t.date === "2026-06-28")
-                    .length
-                }{" "}
-                tasks due today.
-              </p>
-            </div>
-          </div>
+                <div>
+                  <h1
+                    style={{
+                      fontSize: "2rem",
+                      margin: 0,
+                      fontWeight: "700",
+                      color: "#ffffff",
+                    }}
+                  >
+                    {activeTab} ({filteredTasks.length})
+                  </h1>
+                  <p
+                    style={{
+                      margin: "0.25rem 0 0 0",
+                      color: "#8a8a93",
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    You have{" "}
+                    {
+                      tasks.filter(
+                        (t) => !t.completed && t.date === "2026-06-28",
+                      ).length
+                    }{" "}
+                    tasks due today.
+                  </p>
+                </div>
+              </div>
 
-          <TaskList
-            tasks={filteredTasks}
-            onToggleTask={toggleTask}
-            onDeleteTask={deleteTask}
-            onSeeMore={handleSeeMore}
-            onOpenForm={() => setIsFormOpen(true)}
-          />
+              <TaskList
+                tasks={filteredTasks}
+                onToggleTask={toggleTask}
+                onDeleteTask={deleteTask}
+                onSeeMore={handleSeeMore}
+                onOpenForm={() => setIsFormOpen(true)}
+              />
+            </>
+          )}
         </main>
       </div>
 
-      {/* FORM TASK MODAL MODIFIER */}
       {isFormOpen && (
         <TaskForm onAddTask={addTask} onClose={() => setIsFormOpen(false)} />
       )}
 
-      {/* SEE MORE GRID OVERLAY MODAL */}
       {isSeeMoreOpen && (
         <div
           style={{
@@ -280,19 +299,6 @@ export default function App() {
                     }}
                   >
                     {item.text}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: "0.7rem",
-                      fontWeight: "bold",
-                      padding: "0.2rem 0.5rem",
-                      borderRadius: "4px",
-                      backgroundColor:
-                        item.priority === "High" ? "#3b1212" : "#142e1a",
-                      color: item.priority === "High" ? "#ef4444" : "#22c55e",
-                    }}
-                  >
-                    {item.priority}
                   </span>
                 </div>
               ))}
