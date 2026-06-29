@@ -10,7 +10,15 @@ export default function TaskForm({ onAddTask, onClose }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!task.trim()) return;
-    onAddTask(task, category, date, priority, description);
+
+    // ⚡ FIXED: Bundle everything into one object matching your MongoDB schema properties!
+    onAddTask({
+      text: task, // 👈 Maps your 'task' state text string onto the backend schema 'text' property!
+      category,
+      date,
+      priority,
+      description,
+    });
   };
 
   const fieldStyle = {

@@ -223,12 +223,11 @@ export default function CalendarView({ tasks, onToggleTask }) {
         </div>
 
         {/* 5 OR 6 ROW MESH GRID CELLS HOUSING FLOOR */}
-        {/* ⚡ FIXED: Explicitly forcing strict layout heights for all row counts so nothing shrinks */}
         <div
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(7, 1fr)",
-            gridAutoRows: "130px", // 👈 Absolute row height metric enforcement
+            gridAutoRows: "130px",
             backgroundColor: "#1f1f23",
             gap: "1px",
           }}
@@ -249,7 +248,7 @@ export default function CalendarView({ tasks, onToggleTask }) {
                   gap: "0.5rem",
                   position: "relative",
                   boxSizing: "border-box",
-                  height: "130px", // 👈 Locked height block cell bounds
+                  height: "130px",
                   borderTop: isToday ? "2px solid #3b82f6" : "none",
                 }}
               >
@@ -284,10 +283,13 @@ export default function CalendarView({ tasks, onToggleTask }) {
                       task.category,
                       task.completed,
                     );
+                    // ⚡ FIXED: Create a robust fallback identifier string to catch MongoDB hash keys
+                    const taskId = task._id || task.id;
+
                     return (
                       <div
-                        key={task.id}
-                        onClick={() => onToggleTask(task.id)}
+                        key={taskId} // 👈 ⚡ FIXED: Tracking list mutations correctly via unique DB token
+                        onClick={() => onToggleTask(taskId)} // 👈 ⚡ FIXED: Route the dynamic click ID over the network
                         style={{
                           backgroundColor: theme.bg,
                           border: theme.border,

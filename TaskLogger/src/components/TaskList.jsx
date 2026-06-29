@@ -1,5 +1,5 @@
 import React from "react";
-import { CheckCircle2, Circle, Trash2, Calendar } from "lucide-react";
+import { CheckCircle2, Circle, Trash2 } from "lucide-react";
 
 export default function TaskList({
   tasks,
@@ -42,20 +42,20 @@ export default function TaskList({
     );
   }
 
-  // Time boundaries (Matching your workspace target metrics baseline)
-  const todayStr = "2026-06-28";
+  // ⚡ FIXED: Swapped out hardcoded string for automatic local clock matching (YYYY-MM-DD format)
+  const todayStr = new Date().toLocaleDateString("sv-SE");
 
-  // 1. OVERDUE: Sort oldest overdue dates first, then grab the oldest 5
+  // 1. OVERDUE: Filter items that remain uncompleted and have a deadline string smaller than today
   const overdue = tasks
     .filter((t) => !t.completed && t.date < todayStr)
     .sort((a, b) => new Date(a.date) - new Date(b.date));
 
-  // 2. DUE TODAY: Keep chronological based on their creation sequence ID
+  // 2. DUE TODAY: Filter items matching today's dynamic system stamp
   const dueToday = tasks
     .filter((t) => t.date === todayStr)
-    .sort((a, b) => a.id - b.id);
+    .sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
 
-  // 3. UPCOMING: Sort chronologically (closest future date to furthest future date)
+  // 3. UPCOMING: Filter tasks extending further out into the future
   const upcoming = tasks
     .filter((t) => t.date > todayStr)
     .sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -100,10 +100,11 @@ export default function TaskList({
   // Sleek, full-width horizontal row element
   const renderLinearTaskRow = (item) => {
     const tag = getTagStyle(item);
+    const taskId = item._id || item.id;
 
     return (
       <div
-        key={item.id}
+        key={taskId}
         style={{
           display: "flex",
           alignItems: "center",
@@ -115,7 +116,7 @@ export default function TaskList({
           gap: "1rem",
         }}
       >
-        {/* Left Side: Checkbox & Text description line */}
+        {/* Left Side: Checkbox & Text */}
         <div
           style={{
             display: "flex",
@@ -126,7 +127,7 @@ export default function TaskList({
           }}
         >
           <div
-            onClick={() => onToggleTask(item.id)}
+            onClick={() => onToggleTask(taskId)}
             style={{
               cursor: "pointer",
               display: "flex",
@@ -155,7 +156,7 @@ export default function TaskList({
           </span>
         </div>
 
-        {/* Right Side: Inline Deadline Date metadata, Status Pill & Delete trigger actions */}
+        {/* Right Side: Metadata labels and Actions */}
         <div
           style={{
             display: "flex",
@@ -197,7 +198,7 @@ export default function TaskList({
             size={16}
             color="#ef4444"
             style={{ cursor: "pointer", opacity: 0.6 }}
-            onClick={() => onDeleteTask(item.id)}
+            onClick={() => onDeleteTask(taskId)}
           />
         </div>
       </div>
@@ -266,7 +267,6 @@ export default function TaskList({
     );
   };
 
-  // ⚡ FIXED: Cleaned up the leftover template tracker variables line entirely!
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
       {renderLinearSection("Overdue", overdue, "#ef4444")}
