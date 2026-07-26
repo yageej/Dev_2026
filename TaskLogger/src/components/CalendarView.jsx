@@ -2,8 +2,11 @@ import React, { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function CalendarView({ tasks, onToggleTask }) {
-  // June 2026 application workspace baseline
-  const [currentDate, setCurrentDate] = useState(new Date(2026, 5, 28));
+  // ⚡ UPDATED: Initialize calendar to current live system date instead of hardcoded baseline
+  const today = new Date();
+  const [currentDate, setCurrentDate] = useState(
+    new Date(today.getFullYear(), today.getMonth(), 1),
+  );
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -25,7 +28,9 @@ export default function CalendarView({ tasks, onToggleTask }) {
 
   const handlePrevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
   const handleNextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
-  const handleToday = () => setCurrentDate(new Date(2026, 5, 28));
+  // ⚡ UPDATED: Jump dynamically to current live date month
+  const handleToday = () =>
+    setCurrentDate(new Date(today.getFullYear(), today.getMonth(), 1));
 
   // Calendar alignment math
   const firstDayOfMonth = new Date(year, month, 1).getDay();
@@ -235,33 +240,41 @@ export default function CalendarView({ tasks, onToggleTask }) {
           {calendarCells.map((cell, idx) => {
             const dayTasks = getTasksForDay(cell.dayNumber);
             const isToday =
-              cell.dayNumber === 28 && month === 5 && year === 2026;
+              cell.dayNumber === today.getDate() &&
+              month === today.getMonth() &&
+              year === today.getFullYear();
+
+            // ⚡ THRESHOLD LOGIC: Show up to 3 tasks cleanly. If > 3, show top 2 + trigger pill.
+            const hasExcess = dayTasks.length > 3;
+            const visibleTasks = hasExcess ? dayTasks.slice(0, 2) : dayTasks;
 
             return (
               <div
                 key={idx}
                 style={{
                   backgroundColor: "#121214",
-                  padding: "0.75rem",
+                  padding: "0.4rem 0.5rem", // ⚡ Compacted padding so 3 items fit cleanly
                   display: "flex",
                   flexDirection: "column",
-                  gap: "0.5rem",
+                  gap: "0.25rem", // ⚡ Tighter gap spacing
                   position: "relative",
                   boxSizing: "border-box",
                   height: "130px",
                   borderTop: isToday ? "2px solid #3b82f6" : "none",
+                  overflow: "hidden", // Strict clipping guard
                 }}
               >
                 {/* Day Digit Indicator Label */}
                 <span
                   style={{
-                    fontSize: "0.85rem",
+                    fontSize: "0.8rem",
                     fontWeight: "700",
                     color: cell.isCurrentMonth
                       ? isToday
                         ? "#3b82f6"
                         : "#e2e8f0"
                       : "#27272a",
+                    lineHeight: "1.2",
                   }}
                 >
                   {cell.dayNumber}
@@ -272,36 +285,35 @@ export default function CalendarView({ tasks, onToggleTask }) {
                   style={{
                     display: "flex",
                     flexDirection: "column",
-                    gap: "0.35rem",
-                    overflowY: "auto",
+                    gap: "0.2rem",
                     flex: 1,
-                    paddingRight: "1px",
+                    minHeight: 0,
                   }}
                 >
-                  {dayTasks.map((task) => {
+                  {visibleTasks.map((task) => {
                     const theme = getCategoryTheme(
                       task.category,
                       task.completed,
                     );
-                    // ⚡ FIXED: Create a robust fallback identifier string to catch MongoDB hash keys
                     const taskId = task._id || task.id;
 
                     return (
                       <div
-                        key={taskId} // 👈 ⚡ FIXED: Tracking list mutations correctly via unique DB token
-                        onClick={() => onToggleTask(taskId)} // 👈 ⚡ FIXED: Route the dynamic click ID over the network
+                        key={taskId}
+                        onClick={() => onToggleTask(taskId)}
                         style={{
                           backgroundColor: theme.bg,
                           border: theme.border,
                           color: theme.text,
-                          padding: "0.25rem 0.5rem",
-                          borderRadius: "6px",
-                          fontSize: "0.72rem",
+                          padding: "0.15rem 0.35rem", // ⚡ Tighter task chip padding
+                          borderRadius: "4px",
+                          fontSize: "0.68rem",
                           fontWeight: "600",
                           cursor: "pointer",
                           whiteSpace: "nowrap",
                           overflow: "hidden",
                           textOverflow: "ellipsis",
+                          lineHeight: "1.3",
                           textDecoration: task.completed
                             ? "line-through"
                             : "none",
@@ -312,6 +324,28 @@ export default function CalendarView({ tasks, onToggleTask }) {
                       </div>
                     );
                   })}
+
+                  {/* Capped excess pill indicator */}
+                  {/* Concise excess pill indicator */}
+                  {hasExcess && (
+                    <div
+                      style={{
+                        fontSize: "0.68rem",
+                        fontWeight: "700",
+                        color: "#60a5fa",
+                        backgroundColor: "rgba(59, 130, 246, 0.12)",
+                        border: "1px dashed rgba(59, 130, 246, 0.35)",
+                        padding: "0.15rem 0.35rem",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                        textAlign: "center",
+                        lineHeight: "1.2",
+                      }}
+                      title={`Click to view all ${dayTasks.length} tasks`}
+                    >
+                      +{dayTasks.length - 2} more
+                    </div>
+                  )}
                 </div>
               </div>
             );

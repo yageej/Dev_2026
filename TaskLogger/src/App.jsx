@@ -5,6 +5,7 @@ import TopNav from "./components/TopNav";
 import TaskList from "./components/TaskList";
 import CalendarView from "./components/CalendarView";
 import TaskForm from "./components/TaskForm";
+import Metrics from "./components/Metrics";
 
 // Define our secure backend route locator endpoint base string URL
 const API_BASE_URL = "http://localhost:5001/api/tasks";
@@ -18,6 +19,10 @@ export default function App() {
   const [seeMoreTasks, setSeeMoreTasks] = useState([]);
   const [seeMoreTitle, setSeeMoreTitle] = useState("");
   const liveTodayStr = new Date().toISOString().split("T")[0];
+
+  // ⏱️ NEW: Time Consumed Completion Modal States
+  const [completingTask, setCompletingTask] = useState(null);
+  const [timeConsumedInput, setTimeConsumedInput] = useState("");
 
   // 📁 1. FETCH ALL TASKS FROM THE DATABASE ON COMPONENT MOUNT
   useEffect(() => {
@@ -44,13 +49,34 @@ export default function App() {
     }
   };
 
-  // 🟠 3. TOGGLE TASK COMPLETION VALUE
-  const toggleTask = async (id) => {
+  // 🟠 3. TOGGLE TASK COMPLETION VALUE & INTERCEPT FOR TIME LOGGING
+  const toggleTask = async (id, overrideTime = null) => {
+    const targetTask = tasks.find((t) => (t._id || t.id) === id);
+    if (!targetTask) return;
+
+    // ⚡ If task is currently uncompleted and no time has been provided yet, trigger the modal!
+    if (!targetTask.completed && overrideTime === null) {
+      setCompletingTask(targetTask);
+      setTimeConsumedInput("");
+      return;
+    }
+
     try {
-      const response = await axios.put(`${API_BASE_URL}/${id}`);
+      // Pass timeConsumed in payload when marking complete
+      const payload = targetTask.completed
+        ? {}
+        : { timeConsumed: overrideTime || timeConsumedInput || "N/A" };
+
+      const response = await axios.put(`${API_BASE_URL}/${id}`, payload);
       setTasks((prev) =>
-        prev.map((task) => (task._id === id ? response.data : task)),
+        prev.map((task) =>
+          (task._id || task.id) === id ? response.data : task,
+        ),
       );
+
+      // Close time completion modal if open
+      setCompletingTask(null);
+      setTimeConsumedInput("");
     } catch (error) {
       console.error("Error updating task status:", error);
     }
@@ -60,7 +86,7 @@ export default function App() {
   const deleteTask = async (id) => {
     try {
       await axios.delete(`${API_BASE_URL}/${id}`);
-      setTasks((prev) => prev.filter((task) => task._id !== id));
+      setTasks((prev) => prev.filter((task) => (task._id || task.id) !== id));
     } catch (error) {
       console.error("Error purging task entry record mapping indexes:", error);
     }
@@ -72,11 +98,12 @@ export default function App() {
     setIsSeeMoreOpen(true);
   };
 
-  // Filter computation layer tracks matching data schema modifications
+  // ⚡ UPDATED: Filter computation layer handles live text search (title & description) and category/priority tab filters
   const filteredTasks = tasks.filter((task) => {
-    const matchesSearch = task.text
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
+    const query = searchQuery.toLowerCase();
+    const matchesSearch =
+      (task.text && task.text.toLowerCase().includes(query)) ||
+      (task.description && task.description.toLowerCase().includes(query));
 
     // Convert status and tab assignments matching structural UI tracks
     if (!matchesSearch) return false;
@@ -84,6 +111,12 @@ export default function App() {
     if (activeTab === "High Priority") return task.priority === "High";
     if (activeTab === "In Progress") return !task.completed;
     if (activeTab === "Completed") return task.completed;
+
+    // Support category-specific filters (Engineering, Design, Research, General)
+    if (["Engineering", "Design", "Research", "General"].includes(activeTab)) {
+      return task.category === activeTab;
+    }
+
     return true;
   });
 
@@ -131,19 +164,56 @@ export default function App() {
           {activeTab === "Calendar" ? (
             <CalendarView tasks={tasks} onToggleTask={toggleTask} />
           ) : (
-            <>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr", // 👈 Equal 50/50 split balance
+                gap: "2.5rem",
+                alignItems: "start",
+                width: "100%",
+                maxWidth: "1400px", // Prevents ridiculous stretching on ultrawide monitors
+              }}
+            >
+              {/* LEFT COLUMN: OVERVIEW CARDS */}
               <div
                 style={{
                   display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "baseline",
-                  marginBottom: "2rem",
+                  flexDirection: "column",
+                  gap: "1.25rem",
                 }}
               >
-                <div>
+                <h2
+                  style={{
+                    fontSize: "1.2rem",
+                    margin: 0,
+                    color: "#ffffff",
+                    fontWeight: "700",
+                    textAlign: "left",
+                  }}
+                >
+                  Overview
+                </h2>
+                <Metrics tasks={tasks} />
+              </div>
+
+              {/* RIGHT COLUMN: MAIN TASK LIST */}
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "1.25rem",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "baseline",
+                  }}
+                >
                   <h1
                     style={{
-                      fontSize: "2rem",
+                      fontSize: "1.2rem",
                       margin: 0,
                       fontWeight: "700",
                       color: "#ffffff",
@@ -151,32 +221,18 @@ export default function App() {
                   >
                     {activeTab} ({filteredTasks.length})
                   </h1>
-                  <p
-                    style={{
-                      margin: "0.25rem 0 0 0",
-                      color: "#8a8a93",
-                      fontSize: "0.9rem",
-                    }}
-                  >
-                    You have{" "}
-                    {
-                      tasks.filter(
-                        (t) => !t.completed && t.date === liveTodayStr,
-                      ).length
-                    }{" "}
-                    tasks due today.
-                  </p>
                 </div>
-              </div>
 
-              <TaskList
-                tasks={filteredTasks}
-                onToggleTask={toggleTask}
-                onDeleteTask={deleteTask}
-                onSeeMore={handleSeeMore}
-                onOpenForm={() => setIsFormOpen(true)}
-              />
-            </>
+                <TaskList
+                  tasks={filteredTasks}
+                  activeTab={activeTab}
+                  onToggleTask={toggleTask}
+                  onDeleteTask={deleteTask}
+                  onSeeMore={handleSeeMore}
+                  onOpenForm={() => setIsFormOpen(true)}
+                />
+              </div>
+            </div>
           )}
         </main>
       </div>
@@ -185,6 +241,221 @@ export default function App() {
         <TaskForm onAddTask={addTask} onClose={() => setIsFormOpen(false)} />
       )}
 
+      {/* ⏱️ TIME CONSUMED PROMPT MODAL WITH CONSTRAINED NUMERIC PICKERS */}
+      {completingTask && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.85)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 1100,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#121214",
+              border: "1px solid #222226",
+              width: "90%",
+              maxWidth: "420px",
+              borderRadius: "14px",
+              padding: "1.75rem",
+              display: "flex",
+              flexDirection: "column",
+              gap: "1.25rem",
+            }}
+          >
+            <div>
+              <h3 style={{ margin: 0, fontSize: "1.2rem", color: "#ffffff" }}>
+                Complete Task
+              </h3>
+              <p
+                style={{
+                  margin: "0.35rem 0 0 0",
+                  color: "#8a8a93",
+                  fontSize: "0.85rem",
+                }}
+              >
+                Select time spent to finish:{" "}
+                <strong style={{ color: "#3b82f6" }}>
+                  {completingTask.text}
+                </strong>
+              </p>
+            </div>
+
+            {/* Structured Duration Inputs: Hours & Minutes */}
+            <div style={{ display: "flex", gap: "1rem" }}>
+              <div
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.35rem",
+                }}
+              >
+                <label
+                  style={{
+                    fontSize: "0.75rem",
+                    fontWeight: "600",
+                    color: "#a1a1aa",
+                  }}
+                >
+                  HOURS
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="24"
+                  placeholder="0"
+                  value={timeConsumedInput.split(":")[0] || ""}
+                  onChange={(e) => {
+                    const hrs = e.target.value;
+                    const mins = timeConsumedInput.split(":")[1] || "0";
+                    setTimeConsumedInput(`${hrs}:${mins}`);
+                  }}
+                  style={{
+                    backgroundColor: "#18181b",
+                    border: "1px solid #27272a",
+                    borderRadius: "8px",
+                    padding: "0.65rem 0.85rem",
+                    color: "#ffffff",
+                    fontSize: "0.95rem",
+                    outline: "none",
+                  }}
+                />
+              </div>
+
+              <div
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.35rem",
+                }}
+              >
+                <label
+                  style={{
+                    fontSize: "0.75rem",
+                    fontWeight: "600",
+                    color: "#a1a1aa",
+                  }}
+                >
+                  MINUTES
+                </label>
+
+                <input
+                  type="number"
+                  min="0"
+                  max="59"
+                  step="5"
+                  placeholder="0"
+                  value={timeConsumedInput.split(":")[1] || ""}
+                  onChange={(e) => {
+                    const hrs = timeConsumedInput.split(":")[0] || "0";
+                    const mins = e.target.value;
+                    setTimeConsumedInput(`${hrs}:${mins}`);
+                  }}
+                  style={{
+                    backgroundColor: "#18181b",
+                    border: "1px solid #27272a",
+                    borderRadius: "8px",
+                    padding: "0.65rem 0.85rem",
+                    color: "#ffffff",
+                    fontSize: "0.95rem",
+                    outline: "none",
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Quick-Preset Shortcut Chips */}
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              {["0:15", "0:30", "1:00", "2:00"].map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => setTimeConsumedInput(preset)}
+                  style={{
+                    flex: 1,
+                    backgroundColor: "#18181b",
+                    border: "1px solid #27272a",
+                    color: "#a1a1aa",
+                    padding: "0.35rem",
+                    borderRadius: "6px",
+                    fontSize: "0.75rem",
+                    cursor: "pointer",
+                    fontWeight: "600",
+                  }}
+                >
+                  {preset.startsWith("0:")
+                    ? `${preset.split(":")[1]}m`
+                    : `${preset.split(":")[0]}h`}
+                </button>
+              ))}
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "0.75rem",
+                marginTop: "0.5rem",
+              }}
+            >
+              <button
+                onClick={() => setCompletingTask(null)}
+                style={{
+                  backgroundColor: "#18181b",
+                  color: "#a1a1aa",
+                  border: "1px solid #27272a",
+                  padding: "0.6rem 1.1rem",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontSize: "0.85rem",
+                  fontWeight: "600",
+                }}
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={() => {
+                  const [h, m] = timeConsumedInput.split(":");
+                  const hours = parseInt(h || 0, 10);
+                  const mins = parseInt(m || 0, 10);
+
+                  // Format string nicely for display (e.g., "1h 30m" or "45m")
+                  let formatted = "";
+                  if (hours > 0) formatted += `${hours}h `;
+                  if (mins > 0 || hours === 0) formatted += `${mins}m`;
+
+                  toggleTask(
+                    completingTask._id || completingTask.id,
+                    formatted.trim(),
+                  );
+                }}
+                style={{
+                  backgroundColor: "#22c55e",
+                  color: "#000000",
+                  border: "none",
+                  padding: "0.6rem 1.25rem",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontSize: "0.85rem",
+                  fontWeight: "700",
+                }}
+              >
+                Confirm Completion
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {isSeeMoreOpen && (
         <div
           style={{
@@ -290,457 +561,4 @@ export default function App() {
   );
 }
 
-// import React, { useState } from "react";
-// import Sidebar from "./components/Sidebar.jsx";
-// import TopNav from "./components/TopNav";
-// import TaskForm from "./components/TaskForm";
-// import TaskList from "./components/TaskList";
-// import CalendarView from "./components/CalendarView";
-
-// export default function App() {
-//   const [tasks, setTasks] = useState([
-//     {
-//       id: 1,
-//       text: "Review Q3 Design Specs",
-//       completed: false,
-//       category: "Design",
-//       date: "2026-06-28",
-//       priority: "High",
-//       description:
-//         "Deep dive into the upcoming Q3 interface updates. Focus on accessibility standards and the new dark mode token system implementation.",
-//     },
-//     {
-//       id: 2,
-//       text: "Database Migration Script",
-//       completed: false,
-//       category: "Engineering",
-//       date: "2026-06-29",
-//       priority: "High",
-//       description:
-//         "Optimize schema indexes and clean out lingering table caches.",
-//     },
-//     {
-//       id: 3,
-//       text: "Weekly Sync Preparation",
-//       completed: false,
-//       category: "General",
-//       date: "2026-06-14",
-//       priority: "Low",
-//       description: "Draft slides for cross-functional alignment.",
-//     },
-//     {
-//       id: 4,
-//       text: "User Interview Synthesis",
-//       completed: true,
-//       category: "Research",
-//       date: "2026-06-28",
-//       priority: "Low",
-//       description: "Compile insights from user validation tests.",
-//     },
-//     {
-//       id: 5,
-//       text: "API Documentation Update",
-//       completed: false,
-//       category: "Engineering",
-//       date: "2026-06-20",
-//       priority: "High",
-//       description: "Document public endpoints for third-party integrations.",
-//     },
-//     {
-//       id: 6,
-//       text: "Component Library Audit",
-//       completed: false,
-//       category: "Design",
-//       date: "2026-06-18",
-//       priority: "Low",
-//       description: "Check component coverage against brand guidelines.",
-//     },
-//   ]);
-
-//   // View Navigation Filters & Modal Controls
-//   const [activeTab, setActiveTab] = useState("All Tasks");
-//   const [searchQuery, setSearchQuery] = useState("");
-//   const [isFormOpen, setIsFormOpen] = useState(false);
-//   const [isSeeMoreOpen, setIsSeeMoreOpen] = useState(false);
-//   const [seeMoreTitle, setSeeMoreTitle] = useState("");
-//   const [seeMoreTasks, setSeeMoreTasks] = useState([]);
-
-//   const addTask = (text, category, date, priority, description) => {
-//     const newTask = {
-//       id: Date.now(),
-//       text,
-//       completed: false,
-//       category,
-//       date: date || new Date().toISOString().split("T")[0],
-//       priority,
-//       description: description || "No additional parameters provided.",
-//     };
-//     setTasks([...tasks, newTask]);
-//     setIsFormOpen(false);
-//   };
-
-//   const toggleTask = (id) => {
-//     const updated = tasks.map((t) =>
-//       t.id === id ? { ...t, completed: !t.completed } : t,
-//     );
-//     setTasks(updated);
-//     if (isSeeMoreOpen) {
-//       setSeeMoreTasks((prev) =>
-//         prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)),
-//       );
-//     }
-//   };
-
-//   const deleteTask = (id) => {
-//     setTasks(tasks.filter((t) => t.id !== id));
-//     if (isSeeMoreOpen) {
-//       setSeeMoreTasks((prev) => prev.filter((t) => t.id !== id));
-//     }
-//   };
-
-//   const handleSeeMore = (title, list) => {
-//     setSeeMoreTitle(title);
-//     setSeeMoreTasks(list);
-//     setIsSeeMoreOpen(true);
-//   };
-
-//   // Filter Pipeline based on left sidebar state & search queries
-//   const filteredTasks = tasks.filter((task) => {
-//     const matchesSearch = task.text
-//       .toLowerCase()
-//       .includes(searchQuery.toLowerCase());
-//     if (!matchesSearch) return false;
-//     if (activeTab === "High Priority") return task.priority === "High";
-//     if (activeTab === "In Progress") return !task.completed;
-//     if (activeTab === "Completed") return task.completed;
-//     return true; // "All Tasks"
-//   });
-
-//   return (
-//     <div
-//       style={{
-//         display: "flex",
-//         backgroundColor: "#0b0b0c",
-//         minHeight: "100vh",
-//         width: "100vw",
-//         color: "#e2e8f0",
-//         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-//         overflow: "hidden",
-//       }}
-//     >
-//       {/* Sidebar - Fixed Left Column */}
-//       <Sidebar
-//         tasks={tasks}
-//         activeTab={activeTab}
-//         setActiveTab={setActiveTab}
-//         onNewTaskClick={() => setIsFormOpen(true)}
-//       />
-
-//       {/* Main Content Area Wrapper - ⚡ FIXED: Using full flex grow with layout boundary isolation */}
-//       <div
-//         style={{
-//           flex: 1,
-//           display: "flex",
-//           flexDirection: "column",
-//           minWidth: 0,
-//           height: "100vh",
-//         }}
-//       >
-//         <TopNav searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
-
-//         {/* ⚡ FIXED: Added explicit width styles so grid layouts can expand symmetrically */}
-//         <main
-//           style={{
-//             flex: 1,
-//             padding: "2.5rem",
-//             overflowY: "auto",
-//             display: "flex",
-//             flexDirection: "column",
-//             width: "100%",
-//             boxSizing: "border-box",
-//           }}
-//         >
-//           {/* DYNAMIC NAVIGATION SCREEN RENDERING CONTROLLER */}
-//           {activeTab === "Calendar" ? (
-//             <CalendarView tasks={tasks} onToggleTask={toggleTask} />
-//           ) : (
-//             <>
-//               <div
-//                 style={{
-//                   display: "flex",
-//                   justifyContent: "space-between",
-//                   alignItems: "baseline",
-//                   marginBottom: "2rem",
-//                 }}
-//               >
-//                 <div>
-//                   <h1
-//                     style={{
-//                       fontSize: "2rem",
-//                       margin: 0,
-//                       fontWeight: "700",
-//                       color: "#ffffff",
-//                     }}
-//                   >
-//                     {activeTab} ({filteredTasks.length})
-//                   </h1>
-//                   <p
-//                     style={{
-//                       margin: "0.25rem 0 0 0",
-//                       color: "#8a8a93",
-//                       fontSize: "0.9rem",
-//                     }}
-//                   >
-//                     You have{" "}
-//                     {
-//                       tasks.filter(
-//                         (t) => !t.completed && t.date === "2026-06-28",
-//                       ).length
-//                     }{" "}
-//                     tasks due today.
-//                   </p>
-//                 </div>
-//               </div>
-
-//               <TaskList
-//                 tasks={filteredTasks}
-//                 onToggleTask={toggleTask}
-//                 onDeleteTask={deleteTask}
-//                 onSeeMore={handleSeeMore}
-//                 onOpenForm={() => setIsFormOpen(true)}
-//               />
-//             </>
-//           )}
-//         </main>
-//       </div>
-
-//       {isFormOpen && (
-//         <TaskForm onAddTask={addTask} onClose={() => setIsFormOpen(false)} />
-//       )}
-
-//       {isSeeMoreOpen && (
-//         <div
-//           style={{
-//             position: "fixed",
-//             top: 0,
-//             left: 0,
-//             right: 0,
-//             bottom: 0,
-//             backgroundColor: "rgba(0,0,0,0.85)",
-//             display: "flex",
-//             justifyContent: "center",
-//             alignItems: "center",
-//             zIndex: 1000,
-//           }}
-//         >
-//           <div
-//             style={{
-//               backgroundColor: "#121214",
-//               border: "1px solid #222226",
-//               width: "90%",
-//               maxWidth: "550px",
-//               borderRadius: "14px",
-//               padding: "1.5rem",
-//             }}
-//           >
-//             <div
-//               style={{
-//                 display: "flex",
-//                 justifyContent: "space-between",
-//                 alignItems: "center",
-//                 marginBottom: "1rem",
-//                 borderBottom: "1px solid #222226",
-//                 paddingBottom: "0.75rem",
-//               }}
-//             >
-//               <h3 style={{ margin: 0, fontSize: "1.2rem", color: "#ffffff" }}>
-//                 {seeMoreTitle}
-//               </h3>
-//               <button
-//                 onClick={() => setIsSeeMoreOpen(false)}
-//                 style={{
-//                   background: "none",
-//                   border: "none",
-//                   color: "#8a8a93",
-//                   fontSize: "1.2rem",
-//                   cursor: "pointer",
-//                 }}
-//               >
-//                 ✕
-//               </button>
-//             </div>
-//             <div style={{ maxHeight: "350px", overflowY: "auto" }}>
-//               {seeMoreTasks.map((item) => (
-//                 <div
-//                   key={item.id}
-//                   style={{
-//                     display: "flex",
-//                     alignItems: "center",
-//                     justifyContent: "space-between",
-//                     padding: "0.85rem",
-//                     backgroundColor: "#18181b",
-//                     borderRadius: "8px",
-//                     marginBottom: "0.5rem",
-//                     border: "1px solid #222226",
-//                   }}
-//                 >
-//                   <span
-//                     style={{
-//                       fontSize: "0.9rem",
-//                       color: item.completed ? "#52525b" : "#e2e8f0",
-//                     }}
-//                   >
-//                     {item.text}
-//                   </span>
-//                 </div>
-//               ))}
-//             </div>
-//             <div
-//               style={{
-//                 display: "flex",
-//                 justifyContent: "flex-end",
-//                 marginTop: "1rem",
-//               }}
-//             >
-//               <button
-//                 onClick={() => setIsSeeMoreOpen(false)}
-//                 style={{
-//                   backgroundColor: "#222226",
-//                   color: "white",
-//                   border: "none",
-//                   padding: "0.5rem 1.25rem",
-//                   borderRadius: "8px",
-//                   cursor: "pointer",
-//                 }}
-//               >
-//                 Close
-//               </button>
-//             </div>
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
-// import { useState } from 'react'
-// import reactLogo from './assets/react.svg'
-// import viteLogo from './assets/vite.svg'
-// import heroImg from './assets/hero.png'
-// import './App.css'
-
-// function App() {
-//   const [count, setCount] = useState(0)
-
-//   return (
-//     <>
-//       <section id="center">
-//         <div className="hero">
-//           <img src={heroImg} className="base" width="170" height="179" alt="" />
-//           <img src={reactLogo} className="framework" alt="React logo" />
-//           <img src={viteLogo} className="vite" alt="Vite logo" />
-//         </div>
-//         <div>
-//           <h1>Get started</h1>
-//           <p>
-//             Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-//           </p>
-//         </div>
-//         <button
-//           type="button"
-//           className="counter"
-//           onClick={() => setCount((count) => count + 1)}
-//         >
-//           Count is {count}
-//         </button>
-//       </section>
-
-//       <div className="ticks"></div>
-
-//       <section id="next-steps">
-//         <div id="docs">
-//           <svg className="icon" role="presentation" aria-hidden="true">
-//             <use href="/icons.svg#documentation-icon"></use>
-//           </svg>
-//           <h2>Documentation</h2>
-//           <p>Your questions, answered</p>
-//           <ul>
-//             <li>
-//               <a href="https://vite.dev/" target="_blank">
-//                 <img className="logo" src={viteLogo} alt="" />
-//                 Explore Vite
-//               </a>
-//             </li>
-//             <li>
-//               <a href="https://react.dev/" target="_blank">
-//                 <img className="button-icon" src={reactLogo} alt="" />
-//                 Learn more
-//               </a>
-//             </li>
-//           </ul>
-//         </div>
-//         <div id="social">
-//           <svg className="icon" role="presentation" aria-hidden="true">
-//             <use href="/icons.svg#social-icon"></use>
-//           </svg>
-//           <h2>Connect with us</h2>
-//           <p>Join the Vite community</p>
-//           <ul>
-//             <li>
-//               <a href="https://github.com/vitejs/vite" target="_blank">
-//                 <svg
-//                   className="button-icon"
-//                   role="presentation"
-//                   aria-hidden="true"
-//                 >
-//                   <use href="/icons.svg#github-icon"></use>
-//                 </svg>
-//                 GitHub
-//               </a>
-//             </li>
-//             <li>
-//               <a href="https://chat.vite.dev/" target="_blank">
-//                 <svg
-//                   className="button-icon"
-//                   role="presentation"
-//                   aria-hidden="true"
-//                 >
-//                   <use href="/icons.svg#discord-icon"></use>
-//                 </svg>
-//                 Discord
-//               </a>
-//             </li>
-//             <li>
-//               <a href="https://x.com/vite_js" target="_blank">
-//                 <svg
-//                   className="button-icon"
-//                   role="presentation"
-//                   aria-hidden="true"
-//                 >
-//                   <use href="/icons.svg#x-icon"></use>
-//                 </svg>
-//                 X.com
-//               </a>
-//             </li>
-//             <li>
-//               <a href="https://bsky.app/profile/vite.dev" target="_blank">
-//                 <svg
-//                   className="button-icon"
-//                   role="presentation"
-//                   aria-hidden="true"
-//                 >
-//                   <use href="/icons.svg#bluesky-icon"></use>
-//                 </svg>
-//                 Bluesky
-//               </a>
-//             </li>
-//           </ul>
-//         </div>
-//       </section>
-
-//       <div className="ticks"></div>
-//       <section id="spacer"></section>
-//     </>
-//   )
-// }
-
-// export default App
+// Dead code blocks from original structure preserved

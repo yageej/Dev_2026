@@ -1,8 +1,9 @@
 import React from "react";
-import { CheckCircle2, Circle, Trash2 } from "lucide-react";
+import { CheckCircle2, Circle, Trash2, Clock } from "lucide-react";
 
 export default function TaskList({
   tasks,
+  activeTab,
   onToggleTask,
   onDeleteTask,
   onSeeMore,
@@ -16,7 +17,7 @@ export default function TaskList({
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          padding: "4rem",
+          padding: "3rem",
           backgroundColor: "#121214",
           borderRadius: "14px",
           border: "1px dashed #27272a",
@@ -42,39 +43,27 @@ export default function TaskList({
     );
   }
 
-  // ⚡ FIXED: Swapped out hardcoded string for automatic local clock matching (YYYY-MM-DD format)
   const todayStr = new Date().toLocaleDateString("sv-SE");
 
-  // 1. OVERDUE: Filter items that remain uncompleted and have a deadline string smaller than today
-  const overdue = tasks
-    .filter((t) => !t.completed && t.date < todayStr)
-    .sort((a, b) => new Date(a.date) - new Date(b.date));
+  // Filter groups
+  const overdue = tasks.filter((t) => !t.completed && t.date < todayStr);
+  const dueToday = tasks.filter((t) => !t.completed && t.date === todayStr);
+  const upcoming = tasks.filter((t) => !t.completed && t.date > todayStr);
+  const completedTasks = tasks.filter((t) => t.completed);
 
-  // 2. DUE TODAY: Filter items matching today's dynamic system stamp
-  const dueToday = tasks
-    .filter((t) => t.date === todayStr)
-    .sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
-
-  // 3. UPCOMING: Filter tasks extending further out into the future
-  const upcoming = tasks
-    .filter((t) => t.date > todayStr)
-    .sort((a, b) => new Date(a.date) - new Date(b.date));
-
-  // 🎨 Category Badge Style Mapper: Returns distinct color palettes for categories
   const getCategoryStyle = (category) => {
     switch (category) {
       case "Engineering":
-        return { bg: "rgba(59, 130, 246, 0.15)", text: "#60a5fa" }; // Soft Blue
+        return { bg: "rgba(59, 130, 246, 0.15)", text: "#60a5fa" };
       case "Design":
-        return { bg: "rgba(168, 85, 247, 0.15)", text: "#c084fc" }; // Vibrant Purple
+        return { bg: "rgba(168, 85, 247, 0.15)", text: "#c084fc" };
       case "Research":
-        return { bg: "rgba(16, 185, 129, 0.15)", text: "#34d399" }; // Emerald Green
+        return { bg: "rgba(16, 185, 129, 0.15)", text: "#34d399" };
       default:
-        return { bg: "rgba(100, 116, 139, 0.15)", text: "#94a3b8" }; // Slate Gray
+        return { bg: "rgba(100, 116, 139, 0.15)", text: "#94a3b8" };
     }
   };
 
-  // Label pill matching styles
   const getTagStyle = (item) => {
     if (item.completed) {
       return {
@@ -97,13 +86,6 @@ export default function TaskList({
         label: "High Priority",
       };
     }
-    if (item.category === "Engineering") {
-      return {
-        bg: "rgba(129, 140, 248, 0.15)",
-        text: "#818cf8",
-        label: "In Progress",
-      };
-    }
     return {
       bg: "rgba(161, 161, 170, 0.15)",
       text: "#a1a1aa",
@@ -111,7 +93,6 @@ export default function TaskList({
     };
   };
 
-  // Sleek, full-width horizontal row element
   const renderLinearTaskRow = (item) => {
     const tag = getTagStyle(item);
     const categoryTag = getCategoryStyle(item.category);
@@ -124,19 +105,18 @@ export default function TaskList({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "1rem 1.25rem",
+          padding: "0.85rem 1.1rem",
           backgroundColor: "#121214",
           borderBottom: "1px solid #1f1f23",
-          opacity: item.completed ? 0.5 : 1,
+          opacity: item.completed ? 0.65 : 1,
           gap: "1rem",
         }}
       >
-        {/* Left Side: Checkbox & Text */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "1rem",
+            gap: "0.85rem",
             flex: 1,
             minWidth: 0,
           }}
@@ -151,14 +131,14 @@ export default function TaskList({
             }}
           >
             {item.completed ? (
-              <CheckCircle2 size={20} fill="#14532d" />
+              <CheckCircle2 size={18} fill="#14532d" />
             ) : (
-              <Circle size={20} />
+              <Circle size={18} />
             )}
           </div>
           <span
             style={{
-              fontSize: "0.95rem",
+              fontSize: "0.9rem",
               fontWeight: "500",
               color: item.completed ? "#71717a" : "#ffffff",
               textDecoration: item.completed ? "line-through" : "none",
@@ -171,53 +151,61 @@ export default function TaskList({
           </span>
         </div>
 
-        {/* Right Side: Metadata labels and Actions */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "1rem",
+            gap: "0.85rem",
             flexShrink: 0,
           }}
         >
-          {/* Dynamic Category Pill Badge */}
+          {item.completed && item.timeConsumed && (
+            <span
+              style={{
+                fontSize: "0.72rem",
+                fontWeight: "600",
+                padding: "0.2rem 0.5rem",
+                borderRadius: "4px",
+                backgroundColor: "rgba(34, 197, 94, 0.15)",
+                color: "#4ade80",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.3rem",
+              }}
+            >
+              <Clock size={11} />
+              {item.timeConsumed}
+            </span>
+          )}
+
           <span
             style={{
-              fontSize: "0.75rem",
+              fontSize: "0.72rem",
               fontWeight: "600",
-              padding: "0.25rem 0.65rem",
+              padding: "0.2rem 0.5rem",
               borderRadius: "4px",
               backgroundColor: categoryTag.bg,
               color: categoryTag.text,
-              textAlign: "center",
             }}
           >
             {item.category || "General"}
           </span>
 
-          {item.date && !item.completed && item.date >= todayStr && (
-            <span
-              style={{
-                fontSize: "0.8rem",
-                color: "#52525b",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.25rem",
-              }}
-            >
+          {item.date && !item.completed && (
+            <span style={{ fontSize: "0.78rem", color: "#52525b" }}>
               {item.date === todayStr ? "Today" : item.date.slice(5)}
             </span>
           )}
 
           <span
             style={{
-              fontSize: "0.75rem",
+              fontSize: "0.72rem",
               fontWeight: "600",
-              padding: "0.25rem 0.65rem",
+              padding: "0.2rem 0.5rem",
               borderRadius: "4px",
               backgroundColor: tag.bg,
               color: tag.text,
-              minWidth: "75px",
+              minWidth: "65px",
               textAlign: "center",
             }}
           >
@@ -225,7 +213,7 @@ export default function TaskList({
           </span>
 
           <Trash2
-            size={16}
+            size={15}
             color="#ef4444"
             style={{ cursor: "pointer", opacity: 0.6 }}
             onClick={() => onDeleteTask(taskId)}
@@ -241,28 +229,19 @@ export default function TaskList({
     const hasMore = subset.length > 5;
 
     return (
-      <div style={{ marginBottom: "2rem" }}>
-        <div
+      <div style={{ marginBottom: "1.5rem" }}>
+        <h3
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "0.5rem",
+            fontSize: "0.75rem",
+            textTransform: "uppercase",
+            letterSpacing: "0.05em",
+            color: labelColor,
+            margin: "0 0 0.5rem 0",
+            fontWeight: "700",
           }}
         >
-          <h3
-            style={{
-              fontSize: "0.8rem",
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-              color: labelColor,
-              margin: 0,
-              fontWeight: "700",
-            }}
-          >
-            {title}
-          </h3>
-        </div>
+          {title} ({subset.length})
+        </h3>
 
         <div
           style={{
@@ -271,20 +250,21 @@ export default function TaskList({
             backgroundColor: "#121214",
             borderRadius: "8px",
             overflow: "hidden",
+            border: "1px solid #1f1f23",
           }}
         >
           {capped.map((item) => renderLinearTaskRow(item))}
         </div>
 
         {hasMore && (
-          <div style={{ textAlign: "center", marginTop: "0.5rem" }}>
+          <div style={{ textAlign: "center", marginTop: "0.4rem" }}>
             <button
               onClick={() => onSeeMore(title, subset)}
               style={{
                 background: "none",
                 border: "none",
                 color: "#3b82f6",
-                fontSize: "0.8rem",
+                fontSize: "0.75rem",
                 fontWeight: "600",
                 cursor: "pointer",
               }}
@@ -297,6 +277,16 @@ export default function TaskList({
     );
   };
 
+  // If user clicked "Completed" in sidebar, show ONLY completed list
+  if (activeTab === "Completed") {
+    return (
+      <div>
+        {renderLinearSection("Completed Tasks", completedTasks, "#22c55e")}
+      </div>
+    );
+  }
+
+  // Standard Active Views (All Tasks, Priority, Categories, etc.)
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
       {renderLinearSection("Overdue", overdue, "#ef4444")}
