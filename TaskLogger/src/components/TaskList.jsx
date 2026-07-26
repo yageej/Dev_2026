@@ -60,6 +60,20 @@ export default function TaskList({
     .filter((t) => t.date > todayStr)
     .sort((a, b) => new Date(a.date) - new Date(b.date));
 
+  // 🎨 Category Badge Style Mapper: Returns distinct color palettes for categories
+  const getCategoryStyle = (category) => {
+    switch (category) {
+      case "Engineering":
+        return { bg: "rgba(59, 130, 246, 0.15)", text: "#60a5fa" }; // Soft Blue
+      case "Design":
+        return { bg: "rgba(168, 85, 247, 0.15)", text: "#c084fc" }; // Vibrant Purple
+      case "Research":
+        return { bg: "rgba(16, 185, 129, 0.15)", text: "#34d399" }; // Emerald Green
+      default:
+        return { bg: "rgba(100, 116, 139, 0.15)", text: "#94a3b8" }; // Slate Gray
+    }
+  };
+
   // Label pill matching styles
   const getTagStyle = (item) => {
     if (item.completed) {
@@ -100,6 +114,7 @@ export default function TaskList({
   // Sleek, full-width horizontal row element
   const renderLinearTaskRow = (item) => {
     const tag = getTagStyle(item);
+    const categoryTag = getCategoryStyle(item.category);
     const taskId = item._id || item.id;
 
     return (
@@ -161,10 +176,25 @@ export default function TaskList({
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "1.5rem",
+            gap: "1rem",
             flexShrink: 0,
           }}
         >
+          {/* Dynamic Category Pill Badge */}
+          <span
+            style={{
+              fontSize: "0.75rem",
+              fontWeight: "600",
+              padding: "0.25rem 0.65rem",
+              borderRadius: "4px",
+              backgroundColor: categoryTag.bg,
+              color: categoryTag.text,
+              textAlign: "center",
+            }}
+          >
+            {item.category || "General"}
+          </span>
+
           {item.date && !item.completed && item.date >= todayStr && (
             <span
               style={{
