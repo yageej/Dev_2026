@@ -61,6 +61,8 @@ const taskSchema = new mongoose.Schema(
     priority: { type: String, default: "Low" },
     // Additional details. If left blank, it drops an empty text container down safely.
     description: { type: String, default: "" },
+    // ⚡ NEW: Stores duration tracking data (e.g., "1.5 hrs", "45 mins") logged upon task completion!
+    timeConsumed: { type: String, default: "" },
   },
   {
     // Instructs MongoDB to automatically append custom 'createdAt' and 'updatedAt' date parameters
@@ -120,6 +122,7 @@ app.post("/api/tasks", async (req, res) => {
       date: date || new Date().toISOString().split("T")[0],
       priority: priority || "Low",
       description: description || "",
+      timeConsumed: "",
     });
 
     // Commit the newly stamped object to your Mac's physical hard disk files.
@@ -136,13 +139,15 @@ app.post("/api/tasks", async (req, res) => {
 });
 
 // ------------------------------------------
-// 🟠 ROUTE 3: TOGGLE COMPLETION BOOLEAN VALUE (PUT)
+// 🟠 ROUTE 3: TOGGLE COMPLETION BOOLEAN VALUE & LOG TIME (PUT)
 // ------------------------------------------
 // Target strings parameter references get extracted via URL param trackers (e.g., /api/tasks/64b1f28c...)
 app.put("/api/tasks/:id", async (req, res) => {
   try {
     // Grab the exact unique ID variable parameter passed at the end of the HTTP address row line.
     const { id } = req.params;
+    // Extract potential time tracking payload sent from frontend modal
+    const { timeConsumed } = req.body;
 
     // Find the record matching that precise ID inside our MongoDB collection directory.
     const currentTask = await Task.findById(id);
@@ -157,6 +162,14 @@ app.put("/api/tasks/:id", async (req, res) => {
 
     // Flip the target boolean status flag value to its polar opposite switch toggle assignment.
     currentTask.completed = !currentTask.completed;
+
+    // ⚡ UPDATED: If task is being completed, store the timeConsumed string payload
+    if (currentTask.completed && timeConsumed) {
+      currentTask.timeConsumed = timeConsumed;
+    } else if (!currentTask.completed) {
+      // Optional: Reset time consumed if uncompleted
+      currentTask.timeConsumed = "";
+    }
 
     // Re-save the modified file block back to your Mac drive partitions.
     const updatedRecord = await currentTask.save();
@@ -206,6 +219,7 @@ app.delete("/api/tasks/:id", async (req, res) => {
 app.listen(PORT, () => {
   console.log(`⚡ TaskLogger API Engine running securely on port ${PORT}`);
 });
+
 // import express from "express";
 // import cors from "cors";
 // import dotenv from "dotenv";
@@ -239,6 +253,7 @@ app.listen(PORT, () => {
 //     date: { type: String, required: true },
 //     priority: { type: String, default: "Low" },
 //     description: { type: String, default: "" },
+//     timeConsumed: { type: String, default: "" },
 //   },
 //   { timestamps: true },
 // ); // Automatically logs creation time metadata under the hood
@@ -270,6 +285,7 @@ app.listen(PORT, () => {
 //       date: date || new Date().toISOString().split("T")[0],
 //       priority: priority || "Low",
 //       description: description || "",
+//       timeConsumed: "",
 //     });
 
 //     const savedRecord = await newTaskDoc.save();
@@ -285,6 +301,7 @@ app.listen(PORT, () => {
 // app.put("/api/tasks/:id", async (req, res) => {
 //   try {
 //     const { id } = req.params;
+//     const { timeConsumed } = req.body;
 //     const currentTask = await Task.findById(id);
 
 //     if (!currentTask) {
@@ -295,6 +312,12 @@ app.listen(PORT, () => {
 
 //     // Toggle the boolean switch state values
 //     currentTask.completed = !currentTask.completed;
+//     if (currentTask.completed && timeConsumed) {
+//       currentTask.timeConsumed = timeConsumed;
+//     } else if (!currentTask.completed) {
+//       currentTask.timeConsumed = "";
+//     }
+
 //     const updatedRecord = await currentTask.save();
 
 //     res.json(updatedRecord);
