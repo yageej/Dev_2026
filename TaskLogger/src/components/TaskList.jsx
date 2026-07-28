@@ -1,11 +1,12 @@
 import React from "react";
-import { CheckCircle2, Circle, Trash2, Clock } from "lucide-react";
+import { CheckCircle2, Circle, Trash2, Clock, Pencil } from "lucide-react";
 
 export default function TaskList({
   tasks,
   activeTab,
   onToggleTask,
   onDeleteTask,
+  onEditTask,
   onSeeMore,
   onOpenForm,
 }) {
@@ -211,13 +212,20 @@ export default function TaskList({
           >
             {tag.label}
           </span>
-
-          <Trash2
-            size={15}
-            color="#ef4444"
-            style={{ cursor: "pointer", opacity: 0.6 }}
-            onClick={() => onDeleteTask(taskId)}
-          />
+          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+            <Pencil
+              size={15}
+              color="#8a8a93"
+              style={{ cursor: "pointer", opacity: 0.8 }}
+              onClick={() => onEditTask(item)}
+            />
+            <Trash2
+              size={15}
+              color="#ef4444"
+              style={{ cursor: "pointer", opacity: 0.6 }}
+              onClick={() => onDeleteTask(taskId)}
+            />
+          </div>
         </div>
       </div>
     );

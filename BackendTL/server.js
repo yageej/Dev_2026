@@ -139,20 +139,24 @@ app.post("/api/tasks", async (req, res) => {
 });
 
 // ------------------------------------------
-// 🟠 ROUTE 3: TOGGLE COMPLETION BOOLEAN VALUE & LOG TIME (PUT)
 // ------------------------------------------
-// Target strings parameter references get extracted via URL param trackers (e.g., /api/tasks/64b1f28c...)
+// 🟠 ROUTE 3: UPDATE TASK FIELDS OR TOGGLE COMPLETION (PUT)
+// ------------------------------------------
 app.put("/api/tasks/:id", async (req, res) => {
   try {
-    // Grab the exact unique ID variable parameter passed at the end of the HTTP address row line.
     const { id } = req.params;
-    // Extract potential time tracking payload sent from frontend modal
-    const { timeConsumed } = req.body;
+    const {
+      text,
+      category,
+      date,
+      priority,
+      description,
+      timeConsumed,
+      completed,
+    } = req.body;
 
-    // Find the record matching that precise ID inside our MongoDB collection directory.
     const currentTask = await Task.findById(id);
 
-    // If no document exists matching that ID key identifier path string, reject request.
     if (!currentTask) {
       return res.status(404).json({
         error:
@@ -160,21 +164,29 @@ app.put("/api/tasks/:id", async (req, res) => {
       });
     }
 
-    // Flip the target boolean status flag value to its polar opposite switch toggle assignment.
-    currentTask.completed = !currentTask.completed;
+    // If explicit completion status is passed, update it
+    if (typeof completed === "boolean") {
+      currentTask.completed = completed;
+    } else if (req.body.toggle) {
+      // Toggle if explicitly requested
+      currentTask.completed = !currentTask.completed;
+    }
 
-    // ⚡ UPDATED: If task is being completed, store the timeConsumed string payload
+    // Update fields if provided in request body
+    if (text !== undefined) currentTask.text = text;
+    if (category !== undefined) currentTask.category = category;
+    if (date !== undefined) currentTask.date = date;
+    if (priority !== undefined) currentTask.priority = priority;
+    if (description !== undefined) currentTask.description = description;
+
+    // Time tracking payload handling
     if (currentTask.completed && timeConsumed) {
       currentTask.timeConsumed = timeConsumed;
-    } else if (!currentTask.completed) {
-      // Optional: Reset time consumed if uncompleted
+    } else if (!currentTask.completed && timeConsumed === "") {
       currentTask.timeConsumed = "";
     }
 
-    // Re-save the modified file block back to your Mac drive partitions.
     const updatedRecord = await currentTask.save();
-
-    // Send the fresh updated item doc structural status array tracking states back up to React.
     res.json(updatedRecord);
   } catch (error) {
     res.status(500).json({

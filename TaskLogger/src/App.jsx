@@ -6,6 +6,7 @@ import TaskList from "./components/TaskList";
 import CalendarView from "./components/CalendarView";
 import TaskForm from "./components/TaskForm";
 import Metrics from "./components/Metrics";
+import TaskEditModal from "./components/TaskEditModal";
 
 // Define our secure backend route locator endpoint base string URL
 const API_BASE_URL = "http://localhost:5001/api/tasks";
@@ -19,6 +20,7 @@ export default function App() {
   const [seeMoreTasks, setSeeMoreTasks] = useState([]);
   const [seeMoreTitle, setSeeMoreTitle] = useState("");
   const liveTodayStr = new Date().toISOString().split("T")[0];
+  const [editingTask, setEditingTask] = useState(null);
 
   // ⏱️ NEW: Time Consumed Completion Modal States
   const [completingTask, setCompletingTask] = useState(null);
@@ -92,6 +94,19 @@ export default function App() {
     }
   };
 
+  const updateTask = async (id, updatedFields) => {
+    try {
+      const response = await axios.put(`${API_BASE_URL}/${id}`, updatedFields);
+      setTasks((prev) =>
+        prev.map((task) =>
+          (task._id || task.id) === id ? response.data : task,
+        ),
+      );
+      setEditingTask(null);
+    } catch (error) {
+      console.error("Error updating task fields:", error);
+    }
+  };
   const handleSeeMore = (title, items) => {
     setSeeMoreTitle(title);
     setSeeMoreTasks(items);
@@ -228,6 +243,7 @@ export default function App() {
                   activeTab={activeTab}
                   onToggleTask={toggleTask}
                   onDeleteTask={deleteTask}
+                  onEditTask={(task) => setEditingTask(task)}
                   onSeeMore={handleSeeMore}
                   onOpenForm={() => setIsFormOpen(true)}
                 />
@@ -240,7 +256,13 @@ export default function App() {
       {isFormOpen && (
         <TaskForm onAddTask={addTask} onClose={() => setIsFormOpen(false)} />
       )}
-
+      {editingTask && (
+        <TaskEditModal
+          task={editingTask}
+          onSave={updateTask}
+          onClose={() => setEditingTask(null)}
+        />
+      )}
       {/* ⏱️ TIME CONSUMED PROMPT MODAL WITH CONSTRAINED NUMERIC PICKERS */}
       {completingTask && (
         <div
