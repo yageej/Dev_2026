@@ -56,7 +56,6 @@ export default function TaskForm({ onAddTask, onClose }) {
           border: "1px solid #1f1f23",
           padding: "2rem",
           borderRadius: "14px",
-          width: "90%",
           maxWidth: "480px",
           display: "flex",
           flexDirection: "column",
@@ -82,7 +81,7 @@ export default function TaskForm({ onAddTask, onClose }) {
               color: "#71717a",
             }}
           >
-            Configure a new deployment milestone parameter
+            Create your task
           </p>
         </div>
 
